@@ -1,0 +1,176 @@
+<html>
+<head>
+    <title>Computer Shop Parts</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="js/angular.min.js"></script>
+</head>
+
+<body ng-app="partManager" ng-controller="menuCtrl" onload="homePage();">
+
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">Computer Shop Parts</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li>
+                <button type="button" class="btn btn-success" ng-click="homePage()">Home</button>
+            </li>
+            <li>
+                <button type="button" class="btn btn-success" ng-click="listParts()">List Parts</button>
+            </li>
+            <li>
+                <button type="button" class="btn btn-success" ng-click="addPart()">Add Part</button>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container" style="margin-top:50px">
+    <div class="row">
+
+        <div class="table-responsive" id="homePage">
+            <div><h2><center>Documentation</center></h2></div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Nev</th>
+                    <th>Parameter</th>
+                    <th>Leiras</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="active">
+                    <th>Alkatreszek listázása</th>
+                    <th>Get keres, Elérése: "/parts"</th>
+                    <th>Egy Get hívással meghív egy kérés-válasz metódust amely megnyit egy előre definiált json fájl melynek a neve "parts.json". Ez a json fájl tartalmazza a bolt alkatrészeit. Az alkatrészek paraméterei a következők: Név, Típus, Ár, Modell.
+                    </th>
+                </tr>
+                <tr>
+                    <th>Alkatresz hozzáadása</th>
+                    <th>Post paraméteres kérés, Elérése: "/addPart"</th>
+                    <th>Post hívással, annak a body-jában vár négy paramétert melyet egy előre deffiniált json fájlba ír be. Amennyiben sikertelen volt a beírás válaszként visszaadja a hiba okát.
+                    </th>
+                </tr>
+                <tr class="active">
+                    <th>Alkatresz törlése</th>
+                    <th>Get keres paramétere a "name", Elérése: "/deletePart"</th>
+                    <th>Get hívással melynek a paramétere a törölni kívánt adat neve, elküldi a szervernek. Itt ellenörzi hogy átadtunk-e paramétert ha igen akkor ellenürzi hogy egy name paramétert. ha ez is igaz akkor belovassa az előre deffiniált json fájlt és megkeresi az egyező nevű adatsort. Ezután kitörli a sort és a sikerességről választ küld vissza.
+                    </th>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-12" id="addPartForm">
+            <div class="panel panel-default">
+                <div class="panel-heading">Add Part</div>
+                <div class="panel-body">
+
+                    <form id="partForm">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input name="name" type="text" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Type:</label>
+                            <input name="type" type="text" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Price:</label>
+                            <input name="price" type="text" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Model:</label>
+                            <input name="model" type="text" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-default" ng-click="sendForm()">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12" id="partList">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Model</th>
+                    <th>Delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="part in parts">
+                    <td>{{part.name}}</td>
+                    <td>{{part.type}}</td>
+                    <td>{{part.price}}</td>
+                    <td>{{part.model}}</td>
+                    <td>
+                        <button type="button" class="btn btn-success" ng-click="deleteItem(part)">Delete</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    var partListingModule = angular.module("partList", []);
+    var partManagementModule = angular.module("partManager", []);
+
+    partManagementModule.controller("menuCtrl", function ($scope, $http) {
+        $scope.listParts = function () {
+
+            getParts();
+        };
+        $scope.addPart = function () {
+            document.getElementById("addPartForm").style.display = "initial";
+            document.getElementById("partList").style.display = "none";
+            document.getElementById("homePage").style.display = "none";
+        };
+        $scope.sendForm = function () {
+            var form = document.getElementById('partForm');
+            var part = new Object();
+            part.name = form['name'].value;
+            part.type = form['type'].value;
+            part.price = form['price'].value;
+            part.model = form['model'].value;
+            console.log(JSON.stringify(part));
+            $http.post('/addPart', JSON.stringify(part)).success(function () {
+                alert('Computer part is successful added the list!');
+            });
+        };
+        $scope.deleteItem = function (item) {
+            $http.get('/deletePart?name=' + item.name).then(function (resp) {
+                getParts();
+            });
+        };
+
+        $scope.homePage = function () {
+            document.getElementById("homePage").style.display = "initial";
+            document.getElementById("addPartForm").style.display = "none";
+            document.getElementById("partList").style.display = "none";
+        };
+
+        function getParts() {
+            document.getElementById("addPartForm").style.display = "none";
+            document.getElementById("homePage").style.display = "none";
+            document.getElementById("partList").style.display = "initial";
+
+            $http.get('/parts').then(function (resp) {
+                $scope.parts = resp.data;
+            });
+        };
+
+        document.onload = function () {
+            homePage();
+        };
+
+    });
+</script>
+
+</body>
+</html>
